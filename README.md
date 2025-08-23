@@ -55,11 +55,56 @@ Each filter is implemented as a custom CUDA kernel optimized for parallel execut
 
 ## Installation
 
-### Prerequisites
-- NVIDIA GPU with CUDA support
-- CUDA Toolkit installed
-- Python 3.8 or higher
-- Webcam or video capture device
+### Hardware Requirements
+
+**NVIDIA GPU (Required)**
+- NVIDIA GPU with compute capability 3.0 or higher
+- Minimum 2GB VRAM (4GB+ recommended for higher resolutions)
+- Supported GPU families:
+  - GeForce GTX 600 series or newer
+  - GeForce RTX series (all models)
+  - Quadro K series or newer
+  - Tesla K series or newer
+
+**System Requirements**
+- **RAM**: Minimum 8GB (16GB recommended)
+- **CPU**: Multi-core processor (Intel i5/AMD Ryzen 5 or equivalent)
+- **Storage**: 2GB free space for dependencies
+- **Camera**: USB webcam or integrated camera (minimum 480p resolution)
+
+**Operating System Support**
+- Windows 10/11 (64-bit)
+- Ubuntu 18.04+ (64-bit)
+- macOS 10.14+ (Intel Macs with eGPU or Apple Silicon with GPU acceleration)
+
+### Software Prerequisites
+- **NVIDIA GPU Driver**: Latest stable driver (version 450.80.02 or newer)
+- **CUDA Toolkit**: Version 10.2 or newer (12.x recommended)
+- **Python**: 3.8 to 3.11 (3.12+ may have compatibility issues with PyCUDA)
+- **Webcam**: Any USB Video Class (UVC) compatible camera
+
+### Compatibility Check
+
+Before installation, verify your GPU compatibility:
+
+**Windows:**
+```powershell
+nvidia-smi
+```
+
+**Linux/macOS:**
+```bash
+nvidia-smi
+lspci | grep -i nvidia  # Linux only
+```
+
+**Check CUDA compatibility:**
+```bash
+nvcc --version
+```
+
+**Minimum GPU Memory Test:**
+Your GPU should have at least 2GB VRAM. For 1080p processing, 4GB+ is recommended.
 
 ### Setup
 1. Clone the repository:
@@ -241,12 +286,18 @@ Download and install Microsoft Visual C++ Redistributable packages from Microsof
 
 If you continue to experience issues:
 
-1. **Check system requirements:**
-   - NVIDIA GPU with compute capability 3.0+
-   - Latest NVIDIA drivers
-   - Python 3.8-3.11 (3.12+ may have compatibility issues)
+1. **Verify hardware compatibility:**
+   - NVIDIA GPU with compute capability 3.0+ (check with `nvidia-smi`)
+   - Minimum 2GB VRAM available
+   - Latest NVIDIA drivers installed
+   - CUDA Toolkit properly configured
 
-2. **Enable debug output:**
+2. **Check software versions:**
+   - Python 3.8-3.11 (avoid 3.12+ for now)
+   - Compatible PyCUDA version for your CUDA toolkit
+   - Updated OpenCV with video support
+
+3. **Enable debug output:**
    ```python
    import os
    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
