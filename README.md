@@ -118,6 +118,145 @@ This GPU-accelerated implementation provides significant performance improvement
 - Low-latency filter switching
 - Efficient memory utilization
 
+## Troubleshooting
+
+### PyCUDA Installation Issues
+
+**Problem: PyCUDA compilation fails with Visual Studio 2022**
+```
+Unknown compiler version - please run the configure tests and report the results
+error C2988: unrecognizable template declaration/definition
+```
+
+**Solutions:**
+1. **Use pre-built wheels (Recommended):**
+   ```bash
+   pip install --upgrade pip
+   pip install pycuda --find-links https://christophergohlke.github.io/pythonlibs/
+   ```
+
+2. **Install older PyCUDA version:**
+   ```bash
+   pip install pycuda==2019.1.2
+   ```
+
+3. **Use conda instead of pip:**
+   ```bash
+   conda install -c conda-forge pycuda
+   ```
+
+4. **Update Visual Studio Build Tools:**
+   - Download and install the latest Visual Studio Build Tools
+   - Ensure C++ build tools are included
+
+**Problem: CUDA Toolkit not found**
+```
+nvcc not found in PATH
+```
+
+**Solution:**
+1. Download and install CUDA Toolkit from NVIDIA's website
+2. Add CUDA to your system PATH:
+   ```
+   C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.x\bin
+   ```
+
+### OpenCV Issues
+
+**Problem: Camera not detected**
+```
+Error: Could not open camera
+```
+
+**Solutions:**
+1. Check camera permissions in Windows Settings
+2. Ensure no other application is using the camera
+3. Try different camera indices:
+   ```python
+   cap = cv2.VideoCapture(1)  # Try index 1, 2, etc.
+   ```
+
+**Problem: OpenCV installation with CUDA support**
+
+**Solution:**
+```bash
+pip uninstall opencv-python
+pip install opencv-contrib-python
+```
+
+### Runtime Errors
+
+**Problem: CUDA out of memory**
+```
+pycuda._driver.MemoryError: cuMemAlloc failed: out of memory
+```
+
+**Solutions:**
+1. Reduce image resolution in the code
+2. Close other GPU-intensive applications
+3. Check available GPU memory:
+   ```python
+   import pycuda.driver as cuda
+   cuda.mem_get_info()
+   ```
+
+**Problem: Slow performance or low FPS**
+
+**Solutions:**
+1. Check if using integrated vs dedicated GPU
+2. Ensure CUDA drivers are up to date
+3. Monitor GPU utilization with `nvidia-smi`
+4. Reduce camera resolution for better performance
+
+### Environment Issues
+
+**Problem: Virtual environment activation fails**
+
+**Windows PowerShell:**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.venv\Scripts\Activate.ps1
+```
+
+**Windows Command Prompt:**
+```cmd
+.venv\Scripts\activate.bat
+```
+
+**Problem: Missing Visual C++ Redistributables**
+
+**Solution:**
+Download and install Microsoft Visual C++ Redistributable packages from Microsoft's website.
+
+### Common Error Messages
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `ImportError: No module named 'pycuda'` | PyCUDA not installed | Follow PyCUDA installation steps |
+| `pygame.error: No available video device` | Display/graphics issue | Install/update graphics drivers |
+| `cv2.error: function not implemented` | OpenCV compiled without feature | Install `opencv-contrib-python` |
+| `CUDA_ERROR_NO_DEVICE` | No CUDA-capable GPU | Check GPU compatibility |
+
+### Getting Help
+
+If you continue to experience issues:
+
+1. **Check system requirements:**
+   - NVIDIA GPU with compute capability 3.0+
+   - Latest NVIDIA drivers
+   - Python 3.8-3.11 (3.12+ may have compatibility issues)
+
+2. **Enable debug output:**
+   ```python
+   import os
+   os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+   ```
+
+3. **Report issues on GitHub** with:
+   - Full error message
+   - System specifications (OS, GPU, CUDA version)
+   - Python version and package versions
+
 ## Development
 
 ### Adding New Filters
