@@ -396,12 +396,5 @@ if __name__ == "__main__":
     main()
 ```
 
-## Resources for Further Learning
-
-- NVIDIA CUDA Programming Guide
-- CUDA Best Practices Guide
-- Online CUDA courses and tutorials
-- Sample CUDA programs and libraries
-- CUDA development tools and profilers
-
+# Conclusion
 CUDA programming requires thinking differently about algorithms and data organization. With practice, you'll develop intuition for parallel problem-solving and be able to harness the full power of modern GPUs for high-performance computing applications.
