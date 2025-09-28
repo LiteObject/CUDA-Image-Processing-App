@@ -2,7 +2,7 @@
 
 ## Introduction to CUDA
 
-CUDA (Compute Unified Device Architecture) is a parallel computing platform and programming model developed by NVIDIA. It allows developers to use NVIDIA GPUs for general-purpose computing, not just graphics rendering. This guide covers the fundamental concepts you need to understand CUDA programming.
+CUDA (Compute Unified Device Architecture) is a parallel computing platform and programming model developed by NVIDIA. **It allows developers to use NVIDIA GPUs for general-purpose computing, not just graphics rendering**. This guide covers the fundamental concepts you need to understand CUDA programming.
 
 ## Why Use CUDA?
 
@@ -52,6 +52,16 @@ CUDA organizes threads in a hierarchical structure:
 
 This hierarchy helps organize parallel work and optimize memory access patterns.
 
+### Warps (How Threads Actually Execute)
+Although you write code for blocks and threads, the GPU scheduler actually executes threads in groups of 32 called a warp. All 32 threads in a warp execute the same instruction at the same time (Single Instruction, Multiple Threads). If threads in the same warp take different branches of an if/else, they run serially (this is called warp divergence) and performance drops. Keeping control flow similar inside a warp improves efficiency.
+
+Simple mental model:
+- You launch many threads.
+- The GPU groups them into warps of 32.
+- Each warp steps through your kernel together.
+
+You usually do not need to manually manage warps early on, but being aware helps you avoid excessive branching.
+
 ### Memory Types
 CUDA devices have several types of memory:
 
@@ -59,6 +69,9 @@ CUDA devices have several types of memory:
 - **Shared Memory**: Fast but small, shared within a block
 - **Local Memory**: Private to each thread
 - **Constant Memory**: Read-only, cached for fast access
+
+### (Extra) Texture Memory
+Texture memory is a cached read-only memory optimized for 2D spatial locality. It can improve performance for image sampling, especially with non-linear access patterns (like rotations or scaling). In PyCUDA you can bind arrays to texture references. You can skip it until you need higher performance in image work.
 
 ## Basic CUDA Workflow with PyCUDA
 
@@ -100,6 +113,9 @@ grid_size = (size + block_size - 1) // block_size
 simple_kernel(d_data, np.int32(size), 
               block=(block_size, 1, 1), 
               grid=(grid_size, 1))
+
+# Ceiling division ensures every element is covered
+# grid_size = (size + block_size - 1) // block_size
 ```
 
 ### 4. Synchronization
@@ -170,7 +186,8 @@ __global__ void rgb_to_grayscale(unsigned char *input, unsigned char *output,
         unsigned char g = input[idx + 1]; 
         unsigned char b = input[idx];
         
-        unsigned char gray = 0.299f * r + 0.587f * g + 0.114f * b;
+        // Cast to avoid precision loss before storing
+        unsigned char gray = (unsigned char)(0.299f * r + 0.587f * g + 0.114f * b);
         
         output[idx] = gray;
         output[idx + 1] = gray;
@@ -238,6 +255,38 @@ __global__ void sum_reduction(float *input, float *output, int size) {
     }
 }
 '''
+
+### Synchronization Example
+Threads in the same block can coordinate using `__syncthreads()`:
+
+```python
+sync_kernel = '''
+__global__ void sync_example(float *data) {
+    __shared__ float shared[256];
+    int tid = threadIdx.x;
+    shared[tid] = data[tid]; // load
+    __syncthreads();         // wait for all threads
+    if (tid < 128) {
+        shared[tid] += shared[tid + 128];
+    }
+    __syncthreads();
+    if (tid == 0) data[0] = shared[0];
+}
+'''
+```
+
+### Atomic Operations
+When multiple threads update the same memory location, use atomics to avoid race conditions:
+
+```python
+atomic_kernel = '''
+__global__ void histogram(unsigned char *data, int *hist, int size) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < size) {
+        atomicAdd(&hist[data[idx]], 1);
+    }
+}
+'''
 ```
 
 ## Memory Optimization
@@ -247,6 +296,36 @@ Arrange data access patterns so consecutive threads access consecutive memory lo
 
 ### Shared Memory Usage
 Use shared memory for data that multiple threads in a block need to access. This is much faster than global memory but requires careful synchronization.
+
+### Pinned (Page-Locked) Memory
+Pinned (page-locked) host memory can transfer faster to the GPU:
+
+```python
+h_pinned = cuda.pagelocked_empty(1024, dtype=np.float32)
+h_pinned[:] = 1.0
+cuda.memcpy_htod(d_data, h_pinned)  # Often faster than regular host memory
+```
+
+### Unified (Managed) Memory
+Unified memory lets CPU and GPU share a single allocation (simpler, sometimes slower):
+
+```python
+unified = cuda.managed_empty(shape=(1024,), dtype=np.float32)
+unified[0] = 3.14  # Accessible from host
+# Kernel can read/write same pointer without explicit copy
+```
+
+### CUDA Streams (Overlap Work)
+Streams allow overlapping data transfers and kernel execution:
+
+```python
+stream1 = cuda.Stream(); stream2 = cuda.Stream()
+cuda.memcpy_htod_async(d_input, image, stream=stream1)
+grayscale_func(d_input, d_output, np.int32(width), np.int32(height),
+               block=block_size, grid=grid_size, stream=stream1)
+other_kernel(..., stream=stream2)
+stream1.synchronize(); stream2.synchronize()
+```
 
 ### Occupancy
 Maximize the number of active threads on the GPU by choosing appropriate block sizes and minimizing resource usage per thread.
@@ -279,6 +358,19 @@ def check_cuda_error(operation_name):
 cuda.memcpy_htod(d_data, h_data)
 check_cuda_error("memory copy")
 ```
+### Reusable Safe Wrapper
+
+```python
+def safe_call(fn, *args, label="operation", **kwargs):
+    try:
+        result = fn(*args, **kwargs)
+        cuda.Context.synchronize()
+        return result
+    except cuda.Error as e:
+        print(f"CUDA error during {label}: {e}")
+        raise
+```
+
 
 ## Best Practices
 
@@ -394,6 +486,72 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+## Compute Capability (Feature Levels)
+Each GPU generation exposes features via its compute capability:
+
+| Compute Capability | Architecture | Notes |
+|--------------------|-------------|-------|
+| 3.x                | Kepler      | Dynamic parallelism introduced |
+| 5.x                | Maxwell     | Better efficiency |
+| 6.x                | Pascal      | Unified memory improvements |
+| 7.0 / 7.5          | Volta/Turing| Tensor cores (FP16/INT) |
+| 8.0 / 8.6 / 8.9    | Ampere      | 3rd gen tensor cores |
+| 9.x                | Hopper/Ada  | Transformer engine |
+
+You can query your device:
+```python
+device = cuda.Device(0)
+print(device.name(), device.compute_capability())
+```
+
+## Hardware Limits (Typical)
+| Resource | Description | Typical Limit |
+|----------|-------------|---------------|
+| Threads per block | Max threads in one block | 1024 |
+| Warp size | Threads executed together | 32 |
+| Shared memory per block | Fast on-chip memory | 48–100 KB |
+| Registers per thread | Impacts occupancy | 255 |
+| Blocks per SM | Varies by architecture | 16–32 |
+
+Use attributes API:
+```python
+attrs = device.get_attributes()
+from pycuda._driver import device_attribute as A
+print("Max threads/block", attrs[A.MAX_THREADS_PER_BLOCK])
+```
+
+## Dynamic Parallelism (Advanced)
+Some GPUs allow kernels to launch other kernels (compute capability ≥ 3.5). Often not needed early; simplify design first.
+
+## Profiling and Timing
+Measure kernel execution to guide optimization:
+```python
+start = cuda.Event(); end = cuda.Event()
+start.record()
+vector_add(a_gpu, b_gpu, result_gpu, np.int32(n), block=(256,1,1), grid=(grid_size,1))
+end.record(); end.synchronize()
+print("Kernel ms:", start.time_till(end))
+```
+
+Command-line tools: `nvprof` (older), `nsys`, `ncu` (Nsight Compute).
+
+## Quick Reference Summary
+| Concept | One-Line Reminder |
+|---------|-------------------|
+| Thread index | `idx = threadIdx.x + blockIdx.x * blockDim.x` |
+| 2D index | `x = threadIdx.x + blockIdx.x * blockDim.x` / `y = ...` |
+| Grid size (ceil) | `(n + block - 1) // block` |
+| Sync threads | `__syncthreads()` inside a block |
+| Atomic add | `atomicAdd(&ptr[i], val)` |
+| Shared memory decl | `__shared__ float buf[256];` |
+| Shared dynamic | `extern __shared__ float buf[];` |
+| Copy H→D | `cuda.memcpy_htod(dst, src)` |
+| Copy D→H | `cuda.memcpy_dtoh(dst, src)` |
+| Launch kernel | `func(args..., block=(Bx,By,Bz), grid=(Gx,Gy,Gz))` |
+| Measure time | CUDA events (start, end) |
+| Avoid divergence | Keep warps on same branch |
+
 ```
 
 # Conclusion
