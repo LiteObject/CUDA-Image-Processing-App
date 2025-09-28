@@ -1,0 +1,11 @@
+[MESSAGES CONTROL]
+# Disable import errors since packages may not be installed in dev environment
+disable=import-error
+
+[FORMAT]
+# Allow longer lines for CUDA kernel code strings
+max-line-length=120
+
+[BASIC]
+# Allow short variable names commonly used in graphics/CUDA programming
+good-names=i,j,x,y,w,h,r,g,b,dx,dy,gx,gy,tx,ty,idx,idy,tid
