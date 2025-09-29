@@ -1,4 +1,5 @@
-"""hello_cuda.py
+"""
+hello_cuda.py
 Ultra-minimal CUDA demo: square 10 numbers on the GPU.
 
 Usage (after installing dependencies):
