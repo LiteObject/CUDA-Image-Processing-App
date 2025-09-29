@@ -1,4 +1,9 @@
 ```mermaid
+---
+config:
+  theme: neutral
+  look: neo
+---
 flowchart LR
     subgraph "Step-by-Step CUDA Program Flow"
         direction TB

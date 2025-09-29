@@ -1,4 +1,9 @@
 ```mermaid
+---
+config:
+  theme: neutral
+  look: neo
+---
 graph TD
     subgraph "CUDA Memory Hierarchy"
         subgraph "Host Memory"
