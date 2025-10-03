@@ -13,6 +13,85 @@ Traditional CPUs have a few powerful cores optimized for sequential processing. 
 - High memory bandwidth: Fast data access for parallel operations
 - Specialized hardware: Optimized for floating-point calculations
 
+## Common Use Cases for CUDA Programming
+
+CUDA excels at problems that can be decomposed into many independent or loosely-coupled operations. Here are the most common applications:
+
+### 1. **Machine Learning & Deep Learning**
+- **Neural Network Training**: Parallel matrix multiplications and gradient computations
+- **Inference**: Fast prediction on trained models
+- **Frameworks**: TensorFlow, PyTorch, Keras all use CUDA for GPU acceleration
+- **Example**: Training a CNN on millions of images in hours instead of weeks
+
+### 2. **Computer Vision & Image Processing**
+- **Image Filtering**: Blur, sharpen, edge detection (like this project!)
+- **Object Detection**: Real-time video analysis (YOLO, R-CNN)
+- **Image Segmentation**: Medical imaging, autonomous vehicles
+- **Video Processing**: Encoding, decoding, effects in real-time
+- **Example**: Processing 4K video at 60 FPS with filters applied
+
+### 3. **Scientific Computing**
+- **Computational Fluid Dynamics (CFD)**: Weather simulations, aerodynamics
+- **Molecular Dynamics**: Protein folding, drug discovery
+- **Astrophysics**: Galaxy formation simulations, gravitational calculations
+- **Quantum Chemistry**: Molecular orbital calculations
+- **Example**: Simulating protein interactions with millions of atoms
+
+### 4. **Financial & Data Analytics**
+- **Risk Analysis**: Monte Carlo simulations with billions of scenarios
+- **Algorithmic Trading**: Real-time market data analysis
+- **Portfolio Optimization**: Parallel evaluation of investment strategies
+- **Fraud Detection**: Pattern matching across millions of transactions
+- **Example**: Running 10 million Monte Carlo simulations in seconds
+
+### 5. **Cryptography & Security**
+- **Password Cracking**: Brute-force and dictionary attacks
+- **Hash Computation**: Bitcoin mining, blockchain validation
+- **Encryption/Decryption**: Parallel cryptographic operations
+- **Example**: Testing billions of password combinations per second
+
+### 6. **Graphics & Rendering**
+- **Ray Tracing**: Photorealistic rendering with complex light simulation
+- **Path Tracing**: Global illumination for films and games
+- **Physics Simulation**: Cloth, fluid, particle systems
+- **Video Game Graphics**: Real-time rendering, post-processing effects
+- **Example**: Rendering movie frames with ray-traced reflections
+
+### 7. **Audio & Signal Processing**
+- **Audio Effects**: Real-time reverb, equalizers, compression
+- **Speech Recognition**: Parallel feature extraction
+- **Radar/Sonar Processing**: Signal filtering and pattern detection
+- **Example**: Applying complex audio effects to 192 channels simultaneously
+
+### 8. **Genomics & Bioinformatics**
+- **DNA Sequence Alignment**: Comparing genetic sequences
+- **Genome Assembly**: Reconstructing DNA from fragments
+- **Protein Structure Prediction**: AlphaFold-style computations
+- **Example**: Aligning millions of DNA reads against reference genome
+
+### 9. **Natural Language Processing (NLP)**
+- **Large Language Models**: Training GPT, BERT, and similar models
+- **Machine Translation**: Real-time translation with transformers
+- **Text Generation**: Parallel token prediction
+- **Example**: Training ChatGPT-scale models on trillions of tokens
+
+### 10. **Engineering & CAD**
+- **Finite Element Analysis (FEA)**: Stress testing structures
+- **Circuit Simulation**: Electronic design automation
+- **3D Modeling**: Real-time mesh processing
+- **Example**: Simulating stress on a bridge design with millions of nodes
+
+### When **NOT** to Use CUDA
+
+CUDA may not be the best choice when:
+- ❌ **Small datasets**: GPU memory transfer overhead exceeds computation benefit
+- ❌ **Sequential algorithms**: Problems that can't be parallelized (e.g., Fibonacci sequence)
+- ❌ **Heavy branching**: Complex if/else logic causing warp divergence
+- ❌ **I/O-bound tasks**: Reading files, network operations (CPU handles these better)
+- ❌ **One-time calculations**: Setup cost outweighs single-use benefit
+
+**Rule of Thumb**: If you can express your problem as "do this operation on millions of data points independently," CUDA is likely a good fit.
+
 ## Core Concepts
 
 ### Host vs Device
@@ -515,7 +594,8 @@ device = cuda.Device(0)
 print(device.name(), device.compute_capability())
 ```
 
-## Hardware Limits
+## Hardware Limitsls
+
 
 | Resource | Description | Typical Limit |
 |----------|-------------|---------------|
