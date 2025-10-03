@@ -23,6 +23,8 @@ CUDA excels at problems that can be decomposed into many independent or loosely-
 - **Frameworks**: TensorFlow, PyTorch, Keras all use CUDA for GPU acceleration
 - **Example**: Training a CNN on millions of images in hours instead of weeks
 
+>A Convolutional Neural Network (CNN) is a specialized type of deep learning neural network designed primarily for processing grid-like data, such as images. CNNs are the foundation of modern computer vision and are used extensively in image recognition, object detection, and video analysis.
+
 ### 2. **Computer Vision & Image Processing**
 - **Image Filtering**: Blur, sharpen, edge detection (like this project!)
 - **Object Detection**: Real-time video analysis (YOLO, R-CNN)
